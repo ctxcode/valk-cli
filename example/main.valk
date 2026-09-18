@@ -44,7 +44,13 @@ fn main(args: Array[String]) {
         return 0
     })
 
+    // What the shells should offer for --format is what the option allows
+    hello.complete_argument("name", fn(words: Array[String]) Array[String] {
+        return .{ "Ada", "Bob", "Cid" }
+    })
+
     app.root.command(hello)
     app.root.command(list)
+    app.add_completion_command()
     exit(app.run(args))
 }

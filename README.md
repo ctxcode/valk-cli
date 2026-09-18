@@ -145,6 +145,47 @@ way as the errors above:
 if times < 1 : throw .invalid_value { message: "--times takes a number above zero", command: ctx.command.path() }
 ```
 
+## Tab completion
+
+`app.add_completion_command()` adds a `completion` command that prints the script for a shell:
+
+```sh
+mytool completion bash > /etc/bash_completion.d/mytool
+mytool completion zsh  > ~/.zfunc/_mytool          # a directory on your fpath
+mytool completion fish > ~/.config/fish/completions/mytool.fish
+```
+
+The script is a few lines that ask the program itself what to offer, through a hidden
+`__complete` command. Nothing about your commands is written into the script, so it never has to
+be regenerated when you add a command, an option or a value — the completions always match the
+program that is installed.
+
+Out of the box it completes subcommands, long and short option names, and the values of an
+option that has `choices`, including the `--name=value` form. For values that are only known at
+runtime, give the option or the argument a function:
+
+```rust
+deploy.option("environment", "e", "Where to deploy to")
+deploy.complete_option("environment", fn(words: Array[String]) Array[String] {
+    return read_environments(words)      // the words typed so far, if they matter
+})
+
+deploy.argument("service", "Which service", true)
+deploy.complete_argument("service", fn(words: Array[String]) Array[String] {
+    return services_in_the_config()
+})
+```
+
+Where the program offers nothing, bash and zsh fall back to completing file names, so
+`--output <tab>` behaves as a shell user expects.
+
+`app.complete(words)` is the same answer as a value, so what a shell will offer can be asserted
+in a test without a shell:
+
+```rust
+assert(app.complete(.{ "mytool", "remote", "--" }).contains("--help"))
+```
+
 ## Reading without running
 
 `app.parse(args)` returns the `Context` without running anything, for a program that answers by

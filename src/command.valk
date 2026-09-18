@@ -80,6 +80,31 @@
         return this
     }
 
+    /// Says what a shell should offer as the value of an option.
+    ///
+    /// The function is given the words typed so far and returns the candidates. An option with
+    /// `choices` needs none of this: those are offered as they are.
+    ///
+    /// ```valk
+    /// deploy.option("environment", "e", "Where to deploy to")
+    /// deploy.complete_option("environment", fn(words: Array[String]) Array[String] {
+    ///     return read_environments_from_the_config()
+    /// })
+    /// ```
+    + fn complete_option(long: String, values: fn(Array[String])(Array[String])) SELF {
+        let option = this.find_option(long)
+        if isset(option) : option.complete = values
+        return this
+    }
+
+    /// Says what a shell should offer for an argument, the way `complete_option` does.
+    + fn complete_argument(name: String, values: fn(Array[String])(Array[String])) SELF {
+        each this.arguments as argument {
+            if argument.name == name : argument.complete = values
+        }
+        return this
+    }
+
     /// Returns the command with this name, or null.
     + fn find(name: String) ?Command {
         each this.commands as sub {

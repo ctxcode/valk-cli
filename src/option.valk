@@ -30,6 +30,9 @@
     + repeated: bool (false)
     /// The values the option allows, or empty when anything goes.
     + choices: Array[String] (.{})
+    /// Lists the values a shell should offer for this option, given the words typed so far.
+    /// `choices` are offered without one.
+    + complete: ?fn(Array[String])(Array[String]) (null)
 }
 
 /// A value that is not written behind a name: `mytool build <target>`.
@@ -42,4 +45,6 @@
     + required: bool (false)
     /// Whether it takes everything that is left, as `<files...>` does.
     + variadic: bool (false)
+    /// Lists the values a shell should offer for this argument, given the words typed so far.
+    + complete: ?fn(Array[String])(Array[String]) (null)
 }

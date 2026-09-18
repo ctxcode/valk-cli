@@ -14,6 +14,13 @@ Namespaces: [main](#main)
 + error Error (unknown_flag, unknown_command, missing_value, missing_argument, invalid_value, usage) payload { message: String, command: String ("") }
 ```
 
+## Enums for 'main'
+
+```js
+// The shells that can be taught to complete a program.
++ enum Shell { bash, zsh, fish }
+```
+
 ## Functions for 'main'
 
 ```js
@@ -35,6 +42,12 @@ Namespaces: [main](#main)
     // The version, shown by `--version`.
     + version: String
 
+    // Adds a `completion` command, which prints the script for the shell it is given.
+    + fn add_completion_command(name: String ("completion")) App
+    // Returns what a shell should offer for `words`, the command line up to the cursor.
+    + fn complete(words: Array[String]) Array[String]
+    // Returns the script that teaches `shell` to complete this program.
+    + fn completion_script(shell: Shell) String
     // Returns the help text of the root command.
     + fn help() String
     // Creates a program with a root command of the same name.
@@ -49,6 +62,8 @@ Namespaces: [main](#main)
 ```js
 // A value that is not written behind a name: `mytool build <target>`.
 + class Argument {
+    // Lists the values a shell should offer for this argument, given the words typed so far.
+    + complete: ?fn(Array[String])(Array[String])
     // One line for the help text.
     + help: String
     // The name, used in the usage line and to read the value.
@@ -86,6 +101,10 @@ Namespaces: [main](#main)
     + fn argument(name: String, help: String (""), required: bool (false), variadic: bool (false)) Command
     // Adds a command under this one.
     + fn command(sub: Command) Command
+    // Says what a shell should offer for an argument, the way `complete_option` does.
+    + fn complete_argument(name: String, values: fn(Array[String])(Array[String])) Command
+    // Says what a shell should offer as the value of an option.
+    + fn complete_option(long: String, values: fn(Array[String])(Array[String])) Command
     // Returns the command with this name, or null.
     + fn find(name: String) ?Command
     // Returns the switch with this long name, or null.
@@ -161,6 +180,8 @@ Namespaces: [main](#main)
 + class Option {
     // The values the option allows, or empty when anything goes.
     + choices: Array[String]
+    // Lists the values a shell should offer for this option, given the words typed so far. `choices` are offered without one.
+    + complete: ?fn(Array[String])(Array[String])
     // The value used when the option is not given.
     + default: String
     // An environment variable read when the option is not given.

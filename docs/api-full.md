@@ -29,6 +29,17 @@ Thrown while the command line is read.
 `message` is written for the person who typed the command, and `command` names the command
 that was being read, so the usage line can be printed with it.
 
+## Enums for 'main'
+
+```js
+// The shells that can be taught to complete a program.
++ enum Shell { bash, zsh, fish }
+```
+
+### Shell
+
+The shells that can be taught to complete a program.
+
 ## Functions for 'main'
 
 ```js
@@ -55,6 +66,12 @@ and argument it has.
     // The version, shown by `--version`.
     + version: String
 
+    // Adds a `completion` command, which prints the script for the shell it is given.
+    + fn add_completion_command(name: String ("completion")) App
+    // Returns what a shell should offer for `words`, the command line up to the cursor.
+    + fn complete(words: Array[String]) Array[String]
+    // Returns the script that teaches `shell` to complete this program.
+    + fn completion_script(shell: Shell) String
     // Returns the help text of the root command.
     + fn help() String
     // Creates a program with a root command of the same name.
@@ -103,6 +120,40 @@ The command the program itself is.
 
 The version, shown by `--version`.
 
+#### add_completion_command
+
+Adds a `completion` command, which prints the script for the shell it is given.
+
+```valk
+app.add_completion_command()
+// mytool completion bash >> ~/.bashrc
+```
+
+#### complete
+
+Returns what a shell should offer for `words`, the command line up to the cursor.
+
+The first word is the program, and the last is the word being completed, empty when the
+cursor is after a space. This is what the `__complete` command answers with, and it is
+what a test can check without a shell.
+
+```valk
+assert(app.complete(.{ "vcs", "remote", "--" }).contains("--help"))
+```
+
+#### completion_script
+
+Returns the script that teaches `shell` to complete this program.
+
+The script is a few lines that ask the program itself what to offer, so it never has to
+be written again when a command or an option is added.
+
+```sh
+mytool completion bash > /etc/bash_completion.d/mytool     # or source it from .bashrc
+mytool completion zsh  > ~/.zfunc/_mytool
+mytool completion fish > ~/.config/fish/completions/mytool.fish
+```
+
 #### help
 
 Returns the help text of the root command.
@@ -128,6 +179,8 @@ a usage error.
 ```js
 // A value that is not written behind a name: `mytool build <target>`.
 + class Argument {
+    // Lists the values a shell should offer for this argument, given the words typed so far.
+    + complete: ?fn(Array[String])(Array[String])
     // One line for the help text.
     + help: String
     // The name, used in the usage line and to read the value.
@@ -142,6 +195,10 @@ a usage error.
 ### Argument
 
 A value that is not written behind a name: `mytool build <target>`.
+
+#### complete
+
+Lists the values a shell should offer for this argument, given the words typed so far.
 
 #### help
 
@@ -185,6 +242,10 @@ Whether it takes everything that is left, as `<files...>` does.
     + fn argument(name: String, help: String (""), required: bool (false), variadic: bool (false)) Command
     // Adds a command under this one.
     + fn command(sub: Command) Command
+    // Says what a shell should offer for an argument, the way `complete_option` does.
+    + fn complete_argument(name: String, values: fn(Array[String])(Array[String])) Command
+    // Says what a shell should offer as the value of an option.
+    + fn complete_option(long: String, values: fn(Array[String])(Array[String])) Command
     // Returns the command with this name, or null.
     + fn find(name: String) ?Command
     // Returns the switch with this long name, or null.
@@ -268,6 +329,24 @@ Adds an argument. A variadic one takes everything that is left and must come las
 #### command
 
 Adds a command under this one.
+
+#### complete_argument
+
+Says what a shell should offer for an argument, the way `complete_option` does.
+
+#### complete_option
+
+Says what a shell should offer as the value of an option.
+
+The function is given the words typed so far and returns the candidates. An option with
+`choices` needs none of this: those are offered as they are.
+
+```valk
+deploy.option("environment", "e", "Where to deploy to")
+deploy.complete_option("environment", fn(words: Array[String]) Array[String] {
+    return read_environments_from_the_config()
+})
+```
 
 #### find
 
@@ -452,6 +531,8 @@ The single letter form, written as `-n`, or "" when it has none.
 + class Option {
     // The values the option allows, or empty when anything goes.
     + choices: Array[String]
+    // Lists the values a shell should offer for this option, given the words typed so far. `choices` are offered without one.
+    + complete: ?fn(Array[String])(Array[String])
     // The value used when the option is not given.
     + default: String
     // An environment variable read when the option is not given.
@@ -478,6 +559,11 @@ An option that takes a value: `--output file`, `--output=file`, or `-o file`.
 #### choices
 
 The values the option allows, or empty when anything goes.
+
+#### complete
+
+Lists the values a shell should offer for this option, given the words typed so far.
+`choices` are offered without one.
 
 #### default
 
