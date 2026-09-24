@@ -134,7 +134,8 @@ Usage:
 Run 'greet --help' to see what it takes.
 ```
 
-Colours follow the terminal and are off when `NO_COLOR` is set; `cli.colors = false` turns them
+Colours follow the terminal: they are off when standard output is a pipe or a file, and when
+`NO_COLOR` is set; `cli.colors = false` turns them
 off by hand. `app.out` and `app.errors` are where the text goes, standard output and standard
 error by default, so a test can collect them in a `ByteBuffer`.
 

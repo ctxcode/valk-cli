@@ -1,13 +1,27 @@
 use valk.core
 use valk.ansi
 
-/// Whether help and error text is written with colours. It follows the terminal by default, and
-/// `NO_COLOR` turns it off.
-+ global colors: bool (ansi.supported() && !has_no_color())
+/// Whether help and error text is written with colours. It follows the terminal by default: off
+/// when standard output is not a terminal, such as a pipe or a file, and when `NO_COLOR` is set.
++ global colors: bool (ansi.supported() && !has_no_color() && stdout_is_terminal())
 
 fn has_no_color() bool {
     let value = core.getenv("NO_COLOR") ! return false
     return value.length > 0
+}
+
+#if OS == "win"
+extern fn _isatty(fd: i32) i32;
+#else
+extern fn isatty(fd: i32) i32;
+#end
+
+fn stdout_is_terminal() bool {
+    #if OS == "win"
+    return _isatty(1) != 0
+    #else
+    return isatty(1) != 0
+    #end
 }
 
 fn heading(text: String) String {

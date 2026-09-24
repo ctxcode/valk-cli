@@ -73,6 +73,16 @@ fn parse_command_line(root: Command, args: Array[String]) Context !Error {
             continue
         }
 
+        // A subcommand may follow the options of its parent: `tool -v remote add`
+        if positional.length == 0 && word.length > 0 && word[0] != '-' {
+            let sub = command.find(word)
+            if isset(sub) {
+                command = sub
+                context.command = sub
+                continue
+            }
+        }
+
         if word.length > 1 && word[0] == '-' {
             // A run of single letter switches, with an option and its value allowed at the end
             let letters = word.range(1, word.length - 1)

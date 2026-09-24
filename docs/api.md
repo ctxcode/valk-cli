@@ -204,6 +204,6 @@ Namespaces: [main](#main)
 ## Globals for 'main'
 
 ```js
-// Whether help and error text is written with colours. It follows the terminal by default, and `NO_COLOR` turns it off.
+// Whether help and error text is written with colours. It follows the terminal by default: off when standard output is not a terminal, such as a pipe or a file, and when `NO_COLOR` is set.
 + global colors : bool
 ```

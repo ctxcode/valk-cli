@@ -52,6 +52,16 @@ test "Subcommands" {
     assert(app.run(args(.{ "remote", "add", "origin", "url" })) == 0)
     assert(app.run(args(.{ "remote", "add", "upstream", "url" })) == 1)
 
+    // A subcommand after the options of its parent
+    let quiet = app.parse(args(.{ "-q", "remote", "add", "origin", "url" })) ! {
+        println(E.message)
+        assert(false)
+        return
+    }
+    assert(quiet.command.path() == "vcs remote add")
+    assert(quiet.flag("quiet"))
+    assert(quiet.arg("name") == "origin")
+
     // A command that does not exist, with the nearest one offered
     app.parse(args(.{ "remove", "x" })) ! {
         assert(error_is(E.code, unknown_command))
