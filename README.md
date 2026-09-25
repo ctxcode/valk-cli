@@ -116,6 +116,17 @@ app.root.command(remote)
 `vcs remote add --help` prints its help. A command with subcommands and no handler of its own
 prints its help and exits 1, which is what a bare `vcs remote` should do.
 
+An option that every command below should accept is marked `global`, the last parameter of
+`flag` and `option`:
+
+```rust
+app.root.flag("verbose", "v", "Print more", "", true)  // global
+```
+
+`vcs -v remote add ...` and `vcs remote add -v ...` then both work, and the handler of
+`remote add` reads it with `ctx.flag("verbose")`. The help of a subcommand lists these under
+"Global options". A command below may not declare the same name or letter again.
+
 ## Help and errors
 
 `--help` and `-h` print the help of the command they follow; `--version` prints the version.

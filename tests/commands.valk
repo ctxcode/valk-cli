@@ -151,3 +151,48 @@ synctest "Environment variables" {
     assert(without.value("token") == "")
     assert(!without.flag("debug"))
 }
+
+fn with_globals() cli.App {
+    let app = git_like()
+    app.root.flag("verbose", "v", "Say more", "", true)
+    app.root.option("config", "c", "The config file", "vcs.toml", "file", "VCS_TEST_CONFIG", false, false, .{}, true)
+    return app
+}
+
+test "Global options are accepted by the commands under their command" {
+    let app = with_globals()
+
+    // After the subcommand, and after a command under it
+    let ctx = app.parse(args(.{ "remote", "-v", "add", "origin", "url", "--config", "x.toml" })) ! {
+        println(E.message)
+        assert(false)
+        return
+    }
+    assert(ctx.command.path() == "vcs remote add")
+    assert(ctx.flag("verbose"))
+    assert(ctx.value("config") == "x.toml")
+    assert(ctx.arg("name") == "origin")
+
+    // Before it, as before; the default reaches the subcommand as well
+    let before = app.parse(args(.{ "--verbose", "add", "a.txt" })) ! { println(E.message) assert(false) return }
+    assert(before.flag("verbose") && before.value("config") == "vcs.toml")
+
+    // A switch that is not global stays with its own command
+    let refused = false
+    app.parse(args(.{ "add", "-q", "a.txt" })) ! { refused = error_is(E.code, unknown_flag) }
+    assert(refused)
+
+    // The subcommand's help lists them apart from its own options
+    let help = cli.help_text(app.root.find("add") ?? cli.Command.new("?"))
+    assert(help.contains("Global options:") && help.contains("-v, --verbose") && help.contains("--config <file>"))
+    assert(!cli.help_text(app.root).contains("Global options:"))
+}
+
+test "A command cannot redeclare a global option" {
+    let app = with_globals()
+    let add = app.root.find("add") ?? cli.Command.new("?")
+    add.flag("version-all", "v", "Clashes with -v")
+    let message = ""
+    app.parse(args(.{ "add", "a.txt" })) ! { message = E.message }
+    assert(message == "'vcs add' declares -v, which the global option --verbose already uses")
+}
