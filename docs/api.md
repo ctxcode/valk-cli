@@ -107,18 +107,18 @@ Namespaces: [main](#main)
     + fn complete_option(long: String, values: fn(Array[String])(Array[String])) Command
     // Returns the command with this name, or null.
     + fn find(name: String) ?Command
-    // Returns the switch with this long name, or null.
+    // Returns the switch with this long name, or null; a global switch of a command above this one counts too.
     + fn find_flag(long: String) ?Flag
-    // Returns the option with this long name, or null.
+    // Returns the option with this long name, or null; a global option of a command above this one counts too.
     + fn find_option(long: String) ?Option
     // Adds a switch, which is either given or not.
-    + fn flag(long: String, short: String (""), help: String (""), env: String ("")) Command
+    + fn flag(long: String, short: String (""), help: String (""), env: String (""), global: bool (false)) Command
     // Creates a command.
     + static fn new(name: String, summary: String ("")) Command
     // Sets what the command does. It returns the exit code of the program.
     + fn on_run(handler: fn(Context)(i32 !Error)) Command
-    // Adds an option that takes a value.
-    + fn option(long: String, short: String (""), help: String (""), default: String (""), placeholder: String ("value"), env: String (""), required: bool (false), repeated: bool (false), choices: Array[String] (.{})) Command
+    // Adds an option that takes a value. A `global` one is accepted by the commands under this one too, as `flag` describes.
+    + fn option(long: String, short: String (""), help: String (""), default: String (""), placeholder: String ("value"), env: String (""), required: bool (false), repeated: bool (false), choices: Array[String] (.{}), global: bool (false)) Command
     // Returns the names of this command and the ones above it: `mytool remote add`.
     + fn path() String
     // Returns the `Usage:` line of this command.
@@ -166,6 +166,8 @@ Namespaces: [main](#main)
 + class Flag {
     // An environment variable that turns the flag on when it is `1`, `true`, `yes` or `on`.
     + env: String
+    // Whether the commands under this one accept it too: `tool remote -v`.
+    + global: bool
     // One line for the help text.
     + help: String
     // The long name, written as `--name`.
@@ -186,6 +188,8 @@ Namespaces: [main](#main)
     + default: String
     // An environment variable read when the option is not given.
     + env: String
+    // Whether the commands under this one accept it too: `tool remote --config file`.
+    + global: bool
     // One line for the help text.
     + help: String
     // The long name, written as `--name`.

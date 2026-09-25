@@ -248,18 +248,18 @@ Whether it takes everything that is left, as `<files...>` does.
     + fn complete_option(long: String, values: fn(Array[String])(Array[String])) Command
     // Returns the command with this name, or null.
     + fn find(name: String) ?Command
-    // Returns the switch with this long name, or null.
+    // Returns the switch with this long name, or null; a global switch of a command above this one counts too.
     + fn find_flag(long: String) ?Flag
-    // Returns the option with this long name, or null.
+    // Returns the option with this long name, or null; a global option of a command above this one counts too.
     + fn find_option(long: String) ?Option
     // Adds a switch, which is either given or not.
-    + fn flag(long: String, short: String (""), help: String (""), env: String ("")) Command
+    + fn flag(long: String, short: String (""), help: String (""), env: String (""), global: bool (false)) Command
     // Creates a command.
     + static fn new(name: String, summary: String ("")) Command
     // Sets what the command does. It returns the exit code of the program.
     + fn on_run(handler: fn(Context)(i32 !Error)) Command
-    // Adds an option that takes a value.
-    + fn option(long: String, short: String (""), help: String (""), default: String (""), placeholder: String ("value"), env: String (""), required: bool (false), repeated: bool (false), choices: Array[String] (.{})) Command
+    // Adds an option that takes a value. A `global` one is accepted by the commands under this one too, as `flag` describes.
+    + fn option(long: String, short: String (""), help: String (""), default: String (""), placeholder: String ("value"), env: String (""), required: bool (false), repeated: bool (false), choices: Array[String] (.{}), global: bool (false)) Command
     // Returns the names of this command and the ones above it: `mytool remote add`.
     + fn path() String
     // Returns the `Usage:` line of this command.
@@ -354,15 +354,21 @@ Returns the command with this name, or null.
 
 #### find_flag
 
-Returns the switch with this long name, or null.
+Returns the switch with this long name, or null; a global switch of a command above this
+one counts too.
 
 #### find_option
 
-Returns the option with this long name, or null.
+Returns the option with this long name, or null; a global option of a command above
+this one counts too.
 
 #### flag
 
 Adds a switch, which is either given or not.
+
+A `global` one is accepted by the commands under this one too, before or after their
+name: `tool -v remote add` and `tool remote add -v`. They cannot have an option of the
+same name.
 
 #### new
 
@@ -374,7 +380,8 @@ Sets what the command does. It returns the exit code of the program.
 
 #### option
 
-Adds an option that takes a value.
+Adds an option that takes a value. A `global` one is accepted by the commands under this
+one too, as `flag` describes.
 
 #### path
 
@@ -497,6 +504,8 @@ Returns every value an option was given, for one that may be repeated.
 + class Flag {
     // An environment variable that turns the flag on when it is `1`, `true`, `yes` or `on`.
     + env: String
+    // Whether the commands under this one accept it too: `tool remote -v`.
+    + global: bool
     // One line for the help text.
     + help: String
     // The long name, written as `--name`.
@@ -513,6 +522,10 @@ A switch: `--verbose`, or `-v`. It takes no value, and is either given or not.
 #### env
 
 An environment variable that turns the flag on when it is `1`, `true`, `yes` or `on`.
+
+#### global
+
+Whether the commands under this one accept it too: `tool remote -v`.
 
 #### help
 
@@ -537,6 +550,8 @@ The single letter form, written as `-n`, or "" when it has none.
     + default: String
     // An environment variable read when the option is not given.
     + env: String
+    // Whether the commands under this one accept it too: `tool remote --config file`.
+    + global: bool
     // One line for the help text.
     + help: String
     // The long name, written as `--name`.
@@ -572,6 +587,10 @@ The value used when the option is not given.
 #### env
 
 An environment variable read when the option is not given.
+
+#### global
+
+Whether the commands under this one accept it too: `tool remote --config file`.
 
 #### help
 
