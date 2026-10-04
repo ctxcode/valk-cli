@@ -64,7 +64,7 @@ fn faint(text: String) String {
         let width = widest_command(command)
         each command.commands as sub {
             out.write("  ")
-            out.write(accent(sub.name.pad_right(' ', width)))
+            out.write(accent(pad(sub.name, width)))
             if sub.summary.length > 0 {
                 out.write("  ")
                 out.write(sub.summary)
@@ -80,7 +80,7 @@ fn faint(text: String) String {
         let width = widest_argument(command)
         each command.arguments as argument {
             out.write("  ")
-            out.write(accent(argument_label(argument).pad_right(' ', width)))
+            out.write(accent(pad(argument_label(argument), width)))
             if argument.help.length > 0 {
                 out.write("  ")
                 out.write(argument.help)
@@ -93,10 +93,10 @@ fn faint(text: String) String {
     let global_labels = option_labels(command, command.inherited_flags(), command.inherited_options(), false)
     let width: uint = 0
     each labels as label {
-        if label.text.length > width : width = label.text.length
+        if label.text.utf8.length > width : width = label.text.utf8.length
     }
     each global_labels as label {
-        if label.text.length > width : width = label.text.length
+        if label.text.utf8.length > width : width = label.text.utf8.length
     }
     write_labels(out, "Options:", labels, width)
     write_labels(out, "Global options:", global_labels, width)
@@ -128,7 +128,7 @@ fn write_labels(out: ByteBuffer, title: String, labels: Array[HelpLabel], width:
     out.write("\n")
     each labels as label {
         out.write("  ")
-        out.write(accent(label.text.pad_right(' ', width)))
+        out.write(accent(pad(label.text, width)))
         if label.help.length > 0 {
             out.write("  ")
             out.write(label.help)
@@ -161,15 +161,21 @@ fn option_labels(command: Command, flags: Array[Flag], options: Array[Option], o
         labels.append(HelpLabel { text: text, help: option.help, extra: extra.rtrim(" ") })
     }
     if !own : return labels
-    labels.append(HelpLabel { text: "-h, --help", help: "Show this help" })
+    let help = isset(command.find_short_flag("h")) || isset(command.find_short_option("h")) ? "    --help" : "-h, --help"
+    labels.append(HelpLabel { text: help, help: "Show this help" })
     if !isset(command.parent) : labels.append(HelpLabel { text: "    --version", help: "Show the version" })
     return labels
+}
+
+// Pads to a width in characters, so names that are not ASCII line up too
+fn pad(text: String, width: uint) String {
+    return text.pad_right(' ', width + text.length - text.utf8.length)
 }
 
 fn widest_command(command: Command) uint {
     let width: uint = 0
     each command.commands as sub {
-        if sub.name.length > width : width = sub.name.length
+        if sub.name.utf8.length > width : width = sub.name.utf8.length
     }
     return width
 }
@@ -177,7 +183,7 @@ fn widest_command(command: Command) uint {
 fn widest_argument(command: Command) uint {
     let width: uint = 0
     each command.arguments as argument {
-        let length = argument_label(argument).length
+        let length = argument_label(argument).utf8.length
         if length > width : width = length
     }
     return width

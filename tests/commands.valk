@@ -152,6 +152,39 @@ synctest "Environment variables" {
     assert(!without.flag("debug"))
 }
 
+synctest "An environment variable is held to the choices" {
+    let app = cli.App.new("tool", "", "")
+    app.root.option("mode", "m", "How to run", "fast", "mode", "TOOL_TEST_MODE", false, false, .{ "fast", "slow" })
+
+    core.setenv("TOOL_TEST_MODE", "sideways") ! { assert(false) return }
+    let refused = false
+    app.parse(args(.{})) ! {
+        refused = error_is(E.code, invalid_value) && E.message.contains("TOOL_TEST_MODE")
+    }
+    assert(refused)
+    // What is typed wins, so the environment is not looked at
+    assert((app.parse(args(.{ "--mode", "slow" })) ! { assert(false) return }).value("mode") == "slow")
+    core.unsetenv("TOOL_TEST_MODE") ! { assert(false) return }
+}
+
+synctest "Help text lines up names that are not ASCII" {
+    cli.colors = false
+    let app = cli.App.new("tool", "", "")
+    app.root.option("größe", "g", "Size", "", "wert")
+    app.root.option("size", "s", "Size", "", "wert")
+    app.root.command(cli.Command.new("über", "Over"))
+    app.root.command(cli.Command.new("under", "Under"))
+    let text = app.help()
+    assert(text.contains("  -g, --größe <wert>  Size\n"))
+    assert(text.contains("  -s, --size <wert>   Size\n"))
+    assert(text.contains("  über   Over\n"))
+
+    // A command that takes `-h` itself lists help without the letter
+    let db = cli.App.new("db", "", "")
+    db.root.flag("host", "h", "The host")
+    assert(db.help().contains("      --help"))
+}
+
 fn with_globals() cli.App {
     let app = git_like()
     app.root.flag("verbose", "v", "Say more", "", true)

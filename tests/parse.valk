@@ -140,3 +140,38 @@ test "Required options" {
     }
     assert((app.parse(args(.{ "--name", "ada" })) ! { assert(false) return }).value("name") == "ada")
 }
+
+test "Help letter" {
+    let app = simple_app()
+
+    // `-h` may be written together with other switches
+    let grouped = app.parse(args(.{ "-vh" })) ! { println(E.message) assert(false) return }
+    assert(grouped.help_asked)
+    assert(grouped.flag("verbose"))
+
+    // A command that uses the letter itself gets it, and help stays at `--help`
+    let db = cli.App.new("db", "", "")
+    db.root.option("host", "h", "The host")
+    let ctx = db.parse(args(.{ "-h", "example.com" })) ! { println(E.message) assert(false) return }
+    assert(!ctx.help_asked)
+    assert(ctx.value("host") == "example.com")
+    let offered: uint = 0
+    each db.complete(.{ "db", "-" }) as name {
+        if name == "-h" : offered++
+    }
+    assert(offered == 1)
+}
+
+test "Letters that are not ASCII" {
+    let app = cli.App.new("tool", "", "")
+    app.root.flag("eins", "é", "One")
+    app.root.flag("zwei", "z", "Two")
+    let ctx = app.parse(args(.{ "-éz" })) ! { println(E.message) assert(false) return }
+    assert(ctx.flag("eins"))
+    assert(ctx.flag("zwei"))
+    app.parse(args(.{ "-ü" })) ! {
+        assert(E.message.contains("'-ü'"))
+        return
+    }
+    assert(false)
+}

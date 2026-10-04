@@ -150,7 +150,7 @@ fn short_names(command: Command) Array[String] {
     each command.all_options() as option {
         if option.short.length > 0 : names.append("-" + option.short)
     }
-    names.append("-h")
+    if !isset(command.find_short_flag("h")) && !isset(command.find_short_option("h")) : names.append("-h")
     return names
 }
 

@@ -130,7 +130,8 @@ app.root.flag("verbose", "v", "Print more", "", true)  // global
 ## Help and errors
 
 `--help` and `-h` print the help of the command they follow; `--version` prints the version.
-Both are added for you. The help of a command lists its commands, arguments and options with
+Both are added for you; a command that declares `-h` itself, as a `--host` option might, keeps
+the letter, and help is then only `--help`. The help of a command lists its commands, arguments and options with
 their defaults, choices and environment variables.
 
 An error names what went wrong, and offers the nearest thing when something was mistyped:
