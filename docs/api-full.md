@@ -400,7 +400,7 @@ Returns the `Usage:` line of this command.
     ~+ help_asked: bool
     // The program name as it was typed, which is the first item of the command line.
     + program: String
-    // Whatever followed a `--`, handed on untouched.
+    // Whatever followed a `--`, handed on untouched, apart from the words a required argument that nothing else filled takes.
     ~ rest: Array[String]
     // Whether `--version` was written.
     ~+ version_asked: bool
@@ -453,7 +453,8 @@ The program name as it was typed, which is the first item of the command line.
 
 #### rest
 
-Whatever followed a `--`, handed on untouched.
+Whatever followed a `--`, handed on untouched, apart from the words a required argument
+that nothing else filled takes.
 
 #### version_asked
 

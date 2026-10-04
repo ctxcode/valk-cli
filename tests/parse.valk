@@ -54,6 +54,29 @@ test "Arguments" {
     assert(rest.rest.length == 3)
     assert((rest.rest.get(0) !? "") == "--not-mine")
 
+    // A required argument that nothing filled takes the words after `--`
+    let dashed = app.parse(args(.{ "--", "-file.txt", "-x" })) ! { println(E.message) assert(false) return }
+    assert(dashed.arg("source") == "-file.txt")
+    assert(dashed.rest.length == 1)
+    assert((dashed.rest.get(0) !? "") == "-x")
+
+    // Negative numbers are values, unless digits are letters of the command
+    let negative = app.parse(args(.{ "-5", "-0.5", "-v" })) ! { println(E.message) assert(false) return }
+    assert(negative.arg("source") == "-5")
+    assert((negative.args("extra").get(0) !? "") == "-0.5")
+    assert(negative.flag("verbose"))
+    let digits = cli.App.new("tool")
+    digits.root.flag("one", "1", "One")
+    digits.root.argument("value", "A value", false)
+    let lettered = digits.parse(args(.{ "-1" })) ! { assert(false) return }
+    assert(lettered.flag("one"))
+    assert(!lettered.has_arg("value"))
+    let variadic = cli.App.new("tool")
+    variadic.root.argument("files", "Files", true, true)
+    let files = variadic.parse(args(.{ "--", "-a", "-b" })) ! { println(E.message) assert(false) return }
+    assert(files.args("files").length == 2)
+    assert(files.rest.length == 0)
+
     // A `-` on its own is a value, as tools read it for standard input
     let dash = app.parse(args(.{ "-" })) ! { println(E.message) assert(false) return }
     assert(dash.arg("source") == "-")

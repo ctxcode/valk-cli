@@ -58,7 +58,9 @@ The forms every unix tool takes:
 
 Values that are not written behind a name are handed to the arguments in order, wherever they
 appear on the line: `tool one.txt --verbose two.txt` gives `one.txt` and `two.txt` to the
-arguments and turns the switch on.
+arguments and turns the switch on. A negative number such as `-5` is a value too, unless the
+command uses digits as letters. A value that starts with a `-` goes after `--`: words there fill
+the required arguments the others left empty, and the rest is handed on in `ctx.rest`.
 
 ## Options, switches and arguments
 

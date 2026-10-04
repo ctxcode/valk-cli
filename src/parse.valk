@@ -84,6 +84,12 @@ fn parse_command_line(root: Command, args: Array[String]) Context !Error {
             }
         }
 
+        // A negative number is a value, unless the command uses digits as letters
+        if is_negative_number(word) && !uses_digit_letters(command) {
+            positional.append(word)
+            continue
+        }
+
         if word.length > 1 && word[0] == '-' {
             // A run of single letter switches, with an option and its value allowed at the end
             let letters = word.range(1, word.length - 1)
@@ -130,6 +136,23 @@ fn parse_command_line(root: Command, args: Array[String]) Context !Error {
     fill_arguments(context, command, positional) !>
     check_required(context, command) !>
     return context
+}
+
+// `-5`, `-0.5`, `-1e3`
+fn is_negative_number(word: String) bool {
+    if word.length < 2 || word[0] != '-' || !word[1].is_number() : return false
+    word.to_float() ! return false
+    return true
+}
+
+fn uses_digit_letters(command: Command) bool {
+    each command.all_flags() as flag {
+        if flag.short.length == 1 && flag.short[0].is_number() : return true
+    }
+    each command.all_options() as option {
+        if option.short.length == 1 && option.short[0].is_number() : return true
+    }
+    return false
 }
 
 // The number of bytes of the UTF-8 character that starts with `lead`
@@ -182,16 +205,27 @@ fn read_environment(context: Context, command: Command) !Error {
     }
 }
 
-// Hands the values that were not written behind a name to the arguments, in order
+// Hands the values that were not written behind a name to the arguments, in order. A required
+// argument they leave empty takes the words after `--`, for values that start with a `-`.
 fn fill_arguments(context: Context, command: Command, positional: Array[String]) !Error {
     let at: uint = 0
     each command.arguments as argument {
+        let from_rest = at >= positional.length && argument.required && context.rest.length > 0
         if argument.variadic {
+            if from_rest {
+                context.given_arguments.set(argument.name, context.rest.copy())
+                context.rest.clear()
+                continue
+            }
             let rest = Array[String]{}
             while at < positional.length {
                 rest.append(positional.get(at++) !? "")
             }
             context.given_arguments.set(argument.name, rest)
+            continue
+        }
+        if from_rest {
+            context.given_arguments.set(argument.name, Array[String]{ context.rest.pop_first() !? "" })
             continue
         }
         if at >= positional.length : break
