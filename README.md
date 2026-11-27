@@ -9,7 +9,7 @@ Requires Valk 0.7.0 or newer.
 ## Install
 
 ```
-vman install github.com/ctxcode/valk-cli
+vman install github.com/zikue/valk-cli
 ```
 
 ## Example
